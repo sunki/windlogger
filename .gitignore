@@ -1,0 +1,10 @@
+.idea
+.ruby-gemset
+.ruby-version
+*.exe
+*.log
+*.zip
+windlogger.ini
+windlogger.yml
+test
+test1
