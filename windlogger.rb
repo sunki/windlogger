@@ -12,8 +12,9 @@ require 'logger'
 # - broken db
 # - broken files
 
+@now = Time.now
 app_dir = Dir.pwd
-ZIP_NAME = "windlogger_#{Time.now.strftime('%Y-%m-%d-%H-%M-%S')}.zip"
+ZIP_NAME = "windlogger_#{@now.strftime('%Y-%m-%d-%H-%M-%S')}.zip"
 ZIP_PATH = File.join(app_dir, ZIP_NAME)
 STORAGE  = File.join(app_dir, 'windlogger.yml')
 CONFIG   = File.join(app_dir, 'windlogger.ini')
@@ -34,7 +35,7 @@ CFG = cfg_content.inject({}) do |res, line|
 end
 CFG['dirs'] = CFG['dirs'].split(',').map{ |d| d.strip.gsub(/\\/, '/') }
 
-%w(smtp_timeout smtp_attempts smtp_attempts_delay).each{ |key| CFG[key] = CFG[key].to_i }
+%w(smtp_timeout smtp_attempts smtp_attempts_delay created_delay_hours changed_delay_hours).each{ |key| CFG[key] = CFG[key].to_i }
 
 class DB
 
@@ -48,8 +49,8 @@ class DB
   end
 
   def add(dir, files)
-    old_files = data[dir] || []
-    set(dir, files + old_files)
+    old_files = data[dir] || {}
+    set(dir, old_files.merge(files))
   end
 
   def data
@@ -131,24 +132,38 @@ end
 
 def zip_files(fname, files)
   Zip::File.open(fname, Zip::File::CREATE) do |zip|
-    files.each_with_index do |fnames, i|
-      fnames.each do |file|
-        zip.add(file, File.join(CFG['dirs'][i], file))
+    files.each do |dir, fhash|
+      fhash.keys.each do |file|
+        zip.add(file, File.join(dir, file))
       end
     end
   end
 end
 
 @db = DB.new
-@new_files = []
+@new_files = {}
 
 CFG['dirs'].each do |dir|
-  files = Pathname.glob(File.join(dir, '*')).map{ |f| f.basename.to_s }
-  sent_files = @db.get(dir) || []
-  @new_files << (files - sent_files)
+  sent_files = @db.get(dir) || {}
+
+  files = Pathname.glob(File.join(dir, '*')).inject({}) do |res, f|
+    mtime = File.mtime(f)
+    bname = f.basename.to_s
+
+    stime = sent_files[bname]
+
+    next res if stime && stime == mtime
+    next res if @now - mtime < CFG['changed_delay_hours'] * 60 * 60
+    ctime = File.ctime(f)
+    next res if @now - ctime < CFG['created_delay_hours'] * 60 * 60
+
+    res[bname] = mtime
+    res
+  end
+  @new_files[dir] = files
 end
 
-fcount = @new_files.flatten.size
+fcount = @new_files.values.map(&:size).inject(:+)
 if fcount > 0
   LOG.info("Found #{fcount} new files")
   zip_files(ZIP_NAME, @new_files)
@@ -158,7 +173,7 @@ if fcount > 0
   ensure
     File.delete(ZIP_NAME)
   end
-  @new_files.each_with_index{ |files, i| @db.add(CFG['dirs'][i], files) }
+  @new_files.each{ |dir, fhash| @db.add(dir, fhash) }
 else
   msg = 'New files not found'
   LOG.warn(msg)

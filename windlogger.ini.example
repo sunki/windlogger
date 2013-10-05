@@ -1,5 +1,6 @@
 email = email@example.com
 pass = password
+files_delay_hours = 30
 smtp_timeout = 120
 smtp_attempts = 5
 smtp_attempts_delay = 10
