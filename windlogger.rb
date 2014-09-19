@@ -35,7 +35,7 @@ CFG = cfg_content.inject({}) do |res, line|
 end
 CFG['dirs'] = CFG['dirs'].split(',').map{ |d| d.strip.gsub(/\\/, '/') }
 
-%w(smtp_timeout smtp_attempts smtp_attempts_delay created_delay_hours changed_delay_hours).each{ |key| CFG[key] = CFG[key].to_i }
+%w(port smtp_timeout smtp_attempts smtp_attempts_delay created_delay_hours changed_delay_hours).each{ |key| CFG[key] = CFG[key].to_i }
 
 class DB
 
@@ -114,7 +114,9 @@ MSG
   def process
     begin
       Timeout.timeout(CFG['smtp_timeout']) do
-        Net::SMTP.start('smtp.yandex.ru', 25, 'localhost.localdomain', CFG['email'], CFG['pass']) do |smtp|
+        net = Net::SMTP.new(CFG['server'], CFG['port'])
+        net.enable_ssl
+        net.start('localhost.localdomain', CFG['email'], CFG['pass']) do |smtp|
           LOG.info "sending mail (attempt: #{@attempts})"
           #puts @msg
           smtp.send_message(@msg, CFG['email'], CFG['email'])
