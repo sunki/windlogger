@@ -13,11 +13,12 @@ CFG['dirs'].each do |dir|
   sent_files = @db.get(dir) || {}
 
   file = Pathname.glob(File.join(dir, '*')).sort[-2]
+  next unless file
+
   mtime = File.mtime(file)
   bname = file.basename.to_s
 
   sfile = sent_files[bname]
-
   @new_files[dir] = { bname => mtime } unless sfile
 end
 
