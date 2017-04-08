@@ -1,6 +1,8 @@
 require 'logger'
 
-app_dir = File.join(__dir__, '../')
+# Cannot use __dir__ or something due to ocra gem temp folder issues
+app_dir = Dir.pwd
+
 NOW = Time.now
 ZIP_NAME = "windlogger_#{NOW.strftime('%Y-%m-%d-%H-%M-%S')}.zip"
 ZIP_PATH = File.join(app_dir, ZIP_NAME)

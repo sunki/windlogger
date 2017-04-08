@@ -1,6 +1,7 @@
 require 'yaml'
 
-STORAGE  = File.join(__dir__, '../windmover.yml')
+# Cannot use __dir__ or something due to ocra gem temp folder issues
+STORAGE  = File.join(Dir.pwd, 'windmover.yml')
 
 class DB
 
