@@ -1,2 +1,2 @@
 bin/windlogger.rb – for email backups  
-bin/windmover – for copying to a single folder
+bin/windmover.rb – for copying to a single folder
