@@ -6,3 +6,4 @@ smtp_timeout = 120
 smtp_attempts = 5
 smtp_attempts_delay = 10
 dirs = /home/foo/bar, D:\foo\bar
+destination = D:\lorem\ipsum
