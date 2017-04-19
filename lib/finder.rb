@@ -3,7 +3,7 @@ class Finder
     @db = db
   end
 
-  def find
+  def find(options = {})
     new_files = {}
     CFG['dirs'].each do |dir|
       sent_files = @db.get(dir) || {}
@@ -14,7 +14,7 @@ class Finder
 
         stime = sent_files[bname]
 
-        next res if stime && stime == mtime
+        next res if stime && (options[:skip_changed] || stime == mtime)
         next res if NOW - mtime < CFG['changed_delay_hours'] * 60 * 60
         ctime = File.ctime(f)
         next res if NOW - ctime < CFG['created_delay_hours'] * 60 * 60

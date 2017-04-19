@@ -10,7 +10,7 @@ require_relative '../lib/finder'
 db = DB.new
 
 finder = Finder.new(db)
-new_files = finder.find
+new_files = finder.find(skip_changed: true)
 
 fcount = new_files.values.map(&:size).inject(0, :+)
 if fcount > 0
